@@ -1,0 +1,9 @@
+\begin{tabularx}{\textwidth}{Xrrrr}
+\toprule
+Method & Iterations & Setup (s) & Solve (s) & Total (s) \\
+\midrule
+No preconditioner & 122 & 0 & 0.0327 & 0.0327 \\
+$\operatorname{ILU}(A)$ & 5 & 0.00172 & 0.000763 & 0.00248 \\
+Smaller-stencil $B_{13}$ with $\operatorname{ILU}(B_{13})$ & 12 & 0.0385 & 0.00128 & 0.0397 \\
+\bottomrule
+\end{tabularx}

@@ -1,0 +1,12 @@
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}p{0.20\textwidth}>{\raggedright\arraybackslash}X>{\centering\arraybackslash}p{0.10\textwidth}>{\centering\arraybackslash}p{0.09\textwidth}>{\raggedright\arraybackslash}p{0.16\textwidth}}
+\toprule
+Experiment and method & Correction diagnostic & Iterations & Conv. & Timing comparison \\
+\midrule
+Initial direct MLP & solver-direction error $\approx 996$ & 800 cap & $0/12$ & ILU: 11 iterations \\
+Solver-aware MLP & offline error 0.770; closed-loop 2.519 & 300 cap & $0/6$ & ILU: 11 iterations \\
+Solver-aware GNN & offline error 1.158 & 134 median & $6/6$ & 0.813 s; ILU 0.0098 s \\
+On-policy MLP, undamped & on-policy error 1.112 & 67 median & $2/2$ & ILU: 11 iterations \\
+On-policy MLP, $\alpha=0.1$ & damped, no clipping in median & 14 median & $4/4$ & 0.020 s; ILU 0.0084 s \\
+On-policy GNN & on-policy error 4.464 & 83.5 median & $2/4$ & 0.626 s; ILU 11 iterations \\
+\bottomrule
+\end{tabularx}

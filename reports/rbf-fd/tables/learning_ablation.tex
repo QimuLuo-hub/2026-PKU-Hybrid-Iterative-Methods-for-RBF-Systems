@@ -1,0 +1,10 @@
+\begin{tabularx}{\textwidth}{>{\raggedright\arraybackslash}X>{\centering\arraybackslash}p{0.08\textwidth}>{\raggedright\arraybackslash}p{0.24\textwidth}>{\centering\arraybackslash}p{0.12\textwidth}>{\centering\arraybackslash}p{0.11\textwidth}>{\centering\arraybackslash}p{0.13\textwidth}}
+\toprule
+Family/ablation & Reduced rank $p$ & Main offline metric & Median iterations & Median $\eta$ & Deterministic $\eta$ \\
+\midrule
+Scalar $R$, $W$-projector MLP & 19 & normalized $d_W=0.685$ & 89 & 0.939 & 0.983 \\
+$W$-aware dictionary ablation & 19 & best arm remained $Z$-POD & 89 & 0.939 & 0.983 \\
+Scalar $R$, action-loss MLP & 19 & action error $0.935\to0.858$ & 98 & 0.851 & 0.983 \\
+Two-parameter $(R,\theta)$ MLP & 27 & normalized $d_W=0.648$ & 47 & 0.921 & 0.855 \\
+\bottomrule
+\end{tabularx}

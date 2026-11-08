@@ -1,0 +1,203 @@
+\section{Target-specific recycle spaces}
+\label{sec:oracle-recovery}
+
+Sections 1--8 identified spatially varying anisotropy as the decisive hard regime and showed that the original depth-64, rank-eight construction was inadequate. The next question is direct: if sufficient target-specific Krylov information is available, can it produce a reliable low-dimensional recycle space? This section treats the successful construction as a teacher or oracle. It establishes attainable solver performance before asking whether that information can be transferred or learned.
+
+All systems in this continuation use $N=5{,}041$, the established RBF--FD discretization, strong ILU with drop tolerance $10^{-3}$ and fill factor 5, right-preconditioned recycled GMRES, restart 50, and a 300-iteration cap. Construction and evaluation RHSs are disjoint. Convergence requires the true residual
+\begin{equation}
+ \varepsilon_k=\frac{\norm{b-Ax_k}_2}{\norm b_2}\le10^{-8}.
+ \label{eq:continuation-residual}
+\end{equation}
+For baseline, candidate, and reference counts $k_0$, $k_Z$, and $k_*$, solver improvement is measured by
+\begin{equation}
+ J_{\rm iter}=\frac{k_0-k_Z}{k_0},\qquad
+ \eta_* =\frac{k_0-k_Z}{k_0-k_*},\qquad k_0>k_*.
+ \label{eq:continuation-recovery}
+\end{equation}
+A cap remains an observed failure. The reference for $\eta_*$ is stated in each comparison.
+
+\subsection{Depth, rank, and complementary trajectories}
+
+For $B=AM^{-1}$ and the Arnoldi relation in \cref{eq:rightoperator}, ordinary Ritz extraction solves $H_mg=\lambda g$. Harmonic Ritz extraction solves
+\begin{equation}
+ \overline H_m\trans\overline H_mg=\lambda H_m\trans g.
+ \label{eq:harmonic-continuation}
+\end{equation}
+Both constructions preserve real and complex-conjugate blocks and map $V_mg$ through $M^{-1}$. At depth 64, the maximum relative residual among the first eight ordinary Ritz pairs was $2.65\times10^{-5}$ for the one successful field, ID 15. The other seven original hard fields had values from 0.302 to 0.864. Increasing the Arnoldi depth from 64 to 128 raised the strong-success count at requested rank 32 from two to six of eight. At depth 128, rank 24 already achieved six successes. Harmonic extraction, residual filtering, and spectral clustering did not improve this count. The useful information was spread across several directions.
+
+The fixed depth-128, rank-24 rule passed ten of the full 15-system hard population and four of seven previously unused hard systems. The rank was small relative to $N$, yet the failure rate prevented a reliable family-level oracle. Multiple construction trajectories were therefore combined. For trajectory $\ell$, let $Z^{(\ell)}$ contain at most 24 pair-preserving Ritz directions. Their joint SVD defines
+\begin{equation}
+ \mathcal Z=[Z^{(1)},\ldots,Z^{(s)}]=L\Sigma T\trans,
+ \qquad Z_q=L_{:,1:q}.
+ \label{eq:joint-ritz-union}
+\end{equation}
+Each prefix is paired through $AZ_q=W_qR_q$ and $U_q=Z_qR_q^{-1}$. Three depth-128 trajectories with requested rank 48 passed all 15 hard systems and all 45 held-out solves. Actual ranks were 32--48 and the median recycled-to-baseline iteration ratio was 0.113.
+
+\input{tables/week2_oracle_depth_union.tex}
+
+The matched-work comparison in \cref{tab:oracle-depth-union} shows that depth contributes more than same-rank RHS diversity. A single depth-256 trajectory passed 14 systems, whereas two depth-128 trajectories passed ten and four depth-64 trajectories passed one. Retained rank also matters. The depth-256 construction left ID 17 at 228 iterations, while the rank-48 union reduced it to 91. On the original eight fields, truncating the same three-trajectory union from rank 48 to 24 changed IDs 3, 10, and 17 from 33, 38, and 91 iterations to 147, 186, and 300. The data support complementary trajectories only when their added directions are retained.
+
+Requested rank 28 recovered at least 75\% of the rank-48 benefit on six of the original eight fields, while rank 32 did so on seven. A first-cycle contraction rule was then validated on 17 hard systems from a fresh 30-field sample. Starting at rank 28 and expanding to the available rank-48 prefix when $\norm{r_{\rm end}}_2/\norm{r_{\rm start}}_2\ge10^{-4}$ produced 51/51 converged solves. Sensitivity was 1.000, specificity was 0.978, and mean final rank fell from 41.8 to 29.8. Its online time exceeded the fixed alternatives, and the full target-specific dictionary still had to be built.
+
+The result of this section is therefore precise. A reliable target-specific recycle space exists. It requires sufficiently deep Arnoldi information and enough retained directions from complementary trajectories. Its own-system construction is expensive, which motivates the transfer and learning experiments that follow.
+
+\section{From teacher spaces to neural selection}
+\label{sec:family-representation}
+
+The own-system teacher resolves the existence question but spends hundreds of target-specific Arnoldi steps. The next task is to reuse information across systems. The investigation moves from direct donor transfer to a global training dictionary, then separates representation from selection, and finally tests the neural map from $K$ to useful dictionary combinations.
+
+\subsection{Transfer and the global dictionary}
+
+The rank-48 teacher spaces were transferred over all 210 ordered pairs of the 15 hard fields. Each donor $Z_i$ was paired with the target matrix by $A_jZ_i=W_{j\leftarrow i}R_{j\leftarrow i}$, with pairing defects below $4\times10^{-13}$. Physical nearest-neighbor selection used
+\begin{equation}
+ d_K(i,j)=\frac{\norm{K_i-K_j}_{L^2,F}}
+ {\tfrac12(\norm{K_i}_{L^2,F}+\norm{K_j}_{L^2,F})}.
+ \label{eq:physical-field-distance}
+\end{equation}
+Only two of 15 nearest transfers converged on all RHSs, and median recovery was zero. Outcome-selected best donors converged for nine targets and had median recovery 0.374. Physical distance had correlation 0.023 with recovery. The weak result across the full donor library showed that direct reuse was too restrictive.
+
+A broader representation was built from 43 training teachers in a new 72-field sample. Their concatenation contained 1,456 independent columns. To distinguish representation from selection, factor a candidate dictionary as $A\Psi_p=Q_pR_p$ and let $W_*$ be the target teacher action space. Teacher-informed principal selection forms
+\begin{equation}
+ Q_p\trans W_*=L_p\Sigma_pT_p\trans,
+ \qquad
+ Z_{p,*}=\orth\bigl(\Psi_pR_p^{-1}L_{p,:,1:q_*}\bigr).
+ \label{eq:dictionary-ceiling}
+\end{equation}
+This is an optimistic representation test because it uses the target teacher. It does not minimize GMRES iterations.
+
+\input{tables/week2_dictionary_ceilings.tex}
+
+The rank-168 solution-energy basis captured 99.02\% of training energy yet converged on only 12/21 hard-test RHSs. An action-aware basis used paired blocks $A_iU_i=W_i$. With $\mathcal U=[U_i]$, $\mathcal W=[W_i]$, and the leading right singular vectors $T_p$ of $\mathcal W$, it formed
+\begin{equation}
+ \Psi_p^{\rm act}=\orth(\mathcal U T_p),
+ \qquad
+ T_p\in\underset{T\trans T=I_p}{\operatorname{argmin}}
+ \norm{\mathcal W-\mathcal WTT\trans}_F^2.
+ \label{eq:residual-aware-dictionary}
+\end{equation}
+This improved the rank-168 ceiling to 18/21. Larger action-aware bases improved average geometry, but system 63 remained capped through $p=573$. The full 1,456-column training span reached 21/21 convergence and median 36 iterations. The training information is therefore sufficient under teacher-informed selection. Energy truncation loses low-energy directions that matter to the solver.
+
+\subsection{The neural mapping remains unreliable}
+
+The central neural problem is now isolated:
+\begin{equation}
+ K\longmapsto C_\theta(K)\longmapsto
+ Z_\theta=\orth\bigl(\Psi C_\theta(K)\bigr).
+ \label{eq:field-to-dictionary}
+\end{equation}
+An initial rank-143 dictionary and both a parameter MLP and field-input FNO produced median 300-iteration solves on the seven hard test systems. The full teacher converged on all 21 RHSs. Expanding to the full dictionary removed the representation limit but did not solve selection. A coefficient-loss MLP had training $d_W=0.961$. Residual-projector loss improved training $d_W$ to 0.698 for the MLP and 0.769 for the FNO, while both methods still converged on only three hard-test RHSs. The fitting failure already appeared on training systems.
+
+Donor-mixture prediction reduced the output dimension, while compression of selected unions again removed useful directions. The selected unions supported a teacher-informed result of 21/21 convergence, median 78 iterations, and recovery 0.792. Target-action energy compression fell to 3/21. A depth-64 Krylov-overlap reducer improved this to 18/21 and median 144 iterations. Short solver-response selection used substantially more probe work and performed worse. These controls reinforce the main result and do not define separate methods.
+
+The full dictionary $\Psi$ contains sufficient target information under teacher-informed selection. The learned mapping from $K$ to useful combinations of $\Psi$ remains unreliable. This failure motivates a change of input. Short target-local Krylov information may provide the selector with the operator response that the coefficient field alone did not supply.
+
+\section{Classical selection from local probes}
+\label{sec:local-probes}
+
+Neural selection from $K$ failed even when the training dictionary could represent effective spaces. The project therefore moved temporarily to a classical diagnostic: use a short target-local Krylov probe and select dictionary combinations by overlap and SVD. This experiment asks whether local operator response makes selection easier before another neural formulation is attempted.
+
+Let $A\Psi=Q_\Psi R_\Psi$ and let $S$ contain target-local probe information. Replacing the unavailable $W_*$ in \cref{eq:dictionary-ceiling} gives
+\begin{equation}
+ Q_\Psi\trans S=L\Sigma T\trans,
+ \qquad
+ Z_q^{\rm probe}=\orth\bigl(\Psi R_\Psi^{-1}L_{:,1:q}\bigr).
+ \label{eq:probe-selection}
+\end{equation}
+One depth-64 or depth-128 Arnoldi trajectory produced 18/21 convergence and median 91 or 96 iterations under the inherited rank policy. Three depth-64 trajectories gave the same convergence. Retaining 24 harmonic Ritz directions per trajectory defines
+\begin{equation}
+ S_{\rm h}=\orth\bigl([AZ_{\rm h}^{(1)},AZ_{\rm h}^{(2)},AZ_{\rm h}^{(3)}]\bigr),
+ \qquad \dim S_{\rm h}=72.
+ \label{eq:harmonic-information}
+\end{equation}
+
+The main result is that this classical construction succeeds on six of the seven diagnostic hard systems. All three failed evaluation RHSs belong to system 63. The other systems mainly needed a larger retained prefix. Keeping all 48 ordered directions reduced the median from 89 iterations under the inherited adaptive policy to 33 without changing the probes.
+
+\input{tables/week2_probe_rank.tex}
+
+The rank response was broad for five targets. System 43 had one important block at directions 25--32, which saved 75 iterations when added. A separate eight-step rank controller stopped that system at rank eight and reduced total convergence to 15/21. Its diagnostic work also raised the seven-target total from 2,825 to 4,119 iteration equivalents. The earlier adaptive rule had been validated on a different ordered dictionary and did not transfer to this one.
+
+To describe the remaining failure, define target containment for orthonormal $Q$ and $W_*$ by
+\begin{equation}
+ \mathcal C(Q,W_*)=\frac{\norm{Q\trans W_*}_F^2}{q_*}.
+ \label{eq:containment}
+\end{equation}
+The eigenvalues of $W_*\trans QQ\trans W_*$ are squared principal cosines, with zeros for missing dimensions. System 63 had ten teacher combinations with coverage below 0.5 in the harmonic probe space. Removing any one preserved teacher convergence, while a six-direction augmentation only restored convergence at 229 iterations. The failure was collective rather than a single missing mode.
+
+The teacher complement to the fixed rank-48 probe pair $(U_c,W_c)$ is obtained from
+\begin{equation}
+ E_c=(I-W_cW_c\trans)W_{\rm o}=L_c\Sigma_cT_c\trans,
+ \qquad W_{\Delta,r}=L_{c,:,1:r},
+ \label{eq:complementary-target}
+\end{equation}
+with the solution partner formed from the corresponding compensated teacher block. Rank-eight and rank-twelve oracle complements restored all 21 solves. Rank twelve reduced system 63 from the cap to 95 iterations. This result identifies a compact missing subspace and leads directly to the next question: did the short probe fail to contain that information, or did harmonic compression discard it?
+
+\section{Raw Krylov information and the system-63 exception}
+\label{sec:raw-compression}
+
+Section 11 resolved six hard systems and left one repeated diagnostic exception. This section follows that system-63 branch. Its conclusions identify a possible robustness mechanism, though the frequency of that mechanism on fresh hard systems remains unknown.
+
+Combined depth-64 raw Arnoldi spaces had median containment 0.740 for the unresolved correction, compared with 0.438 after harmonic compression. On system 63 the values were 0.901 and 0.258. The raw probe therefore contained much of the missing information, which was lost during spectral compression.
+
+To preserve the solution and action pairing, stack the three Arnoldi solution blocks and their actions as $Y$ and $F=AY$. Remove the fixed classical pair by
+\begin{equation}
+ Y_\perp=Y-U_cW_c\trans F,
+ \qquad
+ F_\perp=(I-W_cW_c\trans)F=AY_\perp,
+ \label{eq:raw-compensation}
+\end{equation}
+then compute the rank-revealing factorization
+\begin{equation}
+ F_\perp\simeq Q_{\rm raw}\Sigma_{\rm raw}T_{\rm raw}\trans,
+ \qquad
+ X_{\rm raw}=Y_\perp T_{\rm raw}\Sigma_{\rm raw}^{-1},
+ \qquad AX_{\rm raw}=Q_{\rm raw}.
+ \label{eq:raw-pair}
+\end{equation}
+Singular values below $10^{-10}$ of the largest are discarded. For correction rank $r$, the teacher-informed raw-space selector chooses
+\begin{equation}
+ C_{*,r}\in\underset{C\trans C=I_r}{\operatorname{argmax}}
+ \norm{C\trans Q_{\rm raw}\trans W_{\Delta,r}}_F^2.
+ \label{eq:raw-oracle}
+\end{equation}
+
+\input{tables/week2_raw_solver.tex}
+
+The raw-space oracle in \cref{tab:raw-solver} converged on all 21 RHSs and reduced system 63 to 92 iterations. The needed information was present in the short raw probe. Neural mixing failed to extract it. At rank twelve, probe-only training containment was 0.201 against a raw-oracle value of 0.446. Adding $K$ reduced it to 0.113. The large training gap reveals a representation or optimization failure before generalization.
+
+The first neural scorer also depended on the arbitrary basis of the raw candidate. Under an orthogonal coordinate change $O$,
+\begin{equation}
+ (X_{\rm raw},Q_{\rm raw})\mapsto(X_{\rm raw}O,Q_{\rm raw}O),
+ \qquad P_r\mapsto O\trans P_rO.
+ \label{eq:coordinate-equivariance}
+\end{equation}
+The physical correction should remain fixed. The scorer had median physical prediction distance 0.926 under this test. A basis-equivariant replacement predicted a symmetric coordinate operator and used its leading eigenspace. Its 33-word span contained six primitive operators, symmetric quadratic products, and primitive cubes. The primitives represented singular-value energy, trajectory participation, and low- and high-frequency spatial Gram matrices. This construction reduced the equivariance defect to about $10^{-8}$, yet rank-12 training containment fell to 0.072.
+
+Per-system coefficient fitting improved hard-test containment to 0.274, far below the raw-oracle value 0.788. Direct Frobenius projection of the target projector onto the same operator span gave median residual energy 0.807 at rank twelve. A six-word cross-RHS spatial extension changed this to 0.806. The tested equivariant representation therefore lacks the required projector structure. Reweighting the same features or adding similar low-order words has little support.
+
+This branch was driven heavily by system 63. It shows that harmonic compression can discard a compact solver-relevant complement and that coordinate symmetry alone cannot recover it. The frequency of this mechanism in a fresh hard population remains unknown.
+
+\section{Current Issues and Next Directions}
+\label{sec:current-issues}
+
+The evidence now forms a clear sequence. Target-specific recycle spaces exist, but their construction is expensive. The full training dictionary contains effective target information, while neural selection from $K$ is unreliable. Short target-local Krylov information makes classical selection much easier and solves six of seven diagnostic hard systems. The remaining system-63 case reveals a deeper missing-complement mechanism, though its prevalence is unknown.
+
+The primary next direction should therefore reconsider the neural formulation. Instead of mapping $K$ directly to a recycle space, use
+\begin{equation}
+ (K,\,\text{very short target-local Krylov probe})
+ \longmapsto \text{neural selector}
+ \longmapsto \text{useful combinations of }\Psi.
+ \label{eq:next-neural-map}
+\end{equation}
+The network should reduce the Krylov information needed for reliable selection. Its value must be tested at equal probe depth against two controls: classical short-probe selection and a probe-only neural selector. A useful model would allow a depth such as $m=8$ or $m=16$ to approach the performance of a substantially deeper classical probe. The current results do not yet support that outcome. They define a focused comparison that can establish whether $K$ adds predictive value once local operator response is available.
+
+Efficiency remains part of the scientific question. Each comparison should report iteration count together with probe applications, dictionary and pairing cost, prediction cost, and total online time. For $n_{\rm rhs}$ repeated solves, the relevant accounting is
+\begin{equation}
+ T(n_{\rm rhs})=T_{\rm ILU}+T_{\rm probe}+T_{\rm pair}
+ +T_{\rm prediction}+n_{\rm rhs}T_{\rm solve}.
+ \label{eq:current-cost}
+\end{equation}
+Teacher generation and training are offline costs and should be reported separately. Success requires a favorable shift in the probe-cost and solver-performance tradeoff after prediction cost is included.
+
+Further raw-space and equivariant work should remain secondary. First sample fresh hard fields and measure how often a fixed rank-48 harmonic-probe space misses a complement comparable to system 63. A dedicated robustness mechanism is justified only if that failure recurs often enough to affect overall solver reliability. The present 33-word operator family should be retired, since both per-system fitting and direct projector projection show a large representation deficit. A richer equivariant architecture becomes relevant only after the prevalence test and only if it can be evaluated against the same short-probe controls.
+
+Any surviving method should be frozen before final evaluation on new coefficient fields with oracle-blind hardness selection and disjoint construction and evaluation RHSs. The decisive result is robust total solution cost relative to strong ILU and the best classical probe selector. Teacher-projector similarity remains a diagnostic rather than the final objective.

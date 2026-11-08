@@ -1,0 +1,17 @@
+\begin{table}[htbp]
+\centering
+\caption{Effects of depth, trajectory count, and retained rank on the 15 hard fields. Success requires convergence on all three RHSs and at least 40\% median iteration reduction.}
+\label{tab:oracle-depth-union}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Construction & Arnoldi steps & Requested $q$ & Successes & Median $k_Z/k_0$\\
+\midrule
+One RHS, $m=128$ & 128 & 24 & 10/15 & 0.293\\
+One RHS, $m=256$ & 256 & 24 & 14/15 & 0.157\\
+Two RHSs, $m=128$ & 256 & 24 & 10/15 & 0.297\\
+Four RHSs, $m=64$ & 256 & 24 & 1/15 & 1.000\\
+Three RHSs, $m=128$ & 384 & 48 & 15/15 & 0.113\\
+\bottomrule
+\end{tabular}
+\end{table}

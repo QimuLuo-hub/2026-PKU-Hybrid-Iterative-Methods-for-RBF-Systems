@@ -1,0 +1,58 @@
+\documentclass[11pt]{article}
+
+\usepackage[margin=0.82in]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,tabularx,array}
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage[dvipsnames]{xcolor}
+\usepackage[numbers,square,sort&compress]{natbib}
+\usepackage{hyperref}
+\usepackage[nameinlink,noabbrev]{cleveref}
+\usepackage{microtype}
+
+\hypersetup{
+  hidelinks,
+  pdftitle={Learned Complementary Preconditioning for RBF-FD Discretizations},
+  pdfauthor={Qimu Luo}
+}
+
+\newcolumntype{Y}{>{\raggedright\arraybackslash}X}
+\newcommand{\norm}[1]{\left\lVert #1\right\rVert}
+\newcommand{\trans}{^{\mathsf T}}
+\newcommand{\orth}{\operatorname{orth}}
+\newcommand{\range}{\operatorname{range}}
+\newcommand{\ilu}{\operatorname{ILU}}
+\newcommand{\rbffd}{\text{RBF--FD}}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{0.15em}
+\setlength{\tabcolsep}{5pt}
+\renewcommand{\arraystretch}{1.12}
+
+\title{Learned Complementary Preconditioning for Sparse RBF--FD Discretizations}
+\author{Qimu Luo}
+\date{September 2026}
+
+\begin{document}
+\maketitle
+
+\begingroup
+\let\quotation\quote
+\let\endquotation\endquote
+\begin{abstract}
+This report studies the inverse action left unresolved by strong classical preconditioning, $d(r)=A^{-1}r-M^{-1}r$, for sparse polynomially augmented RBF--FD discretizations. Strong ILU already solves the tested Poisson, scalar-contrast, moderate node-irregularity, and scale-only systems efficiently. Rotated anisotropic diffusion creates an accurate but difficult regime in which system-own Ritz spaces can accelerate nonsymmetric recycled GMRES. Direct learned corrections did not outperform ILU. Learned subspace prediction became comparable with deterministic interpolation only within a narrow spatially constant coefficient family.
+
+For spatially varying tensor fields, short Arnoldi constructions initially failed. Deeper trajectories and adequate retained dimension recovered an own-system union oracle on all 15 original hard fields, and rank adaptation was validated on 17 independently sampled hard systems. These successes did not yield reliable cross-field reuse. Training-dictionary truncation discarded solver-relevant information, while neural selection remained poor even when training targets were representable. Target-local probe construction recovered most teacher benefit on six of seven later hard targets once rank 48 was retained, but left a collective missing subspace on the remaining target.
+
+Raw multi-RHS Krylov information contained a useful rank-12 correction for that failure. Its teacher-informed extraction reduced the difficult solve from the 300-step cap to 92 iterations. Neural mixing and a subsequently tested equivariant operator family failed to recover this effect. Direct projector analysis confirmed a large representation deficit in the tested operator span. The primary open problem is neural selection from a reusable dictionary using both the coefficient field and a very short target-local probe. The network must improve the probe-cost and solver-performance tradeoff relative to classical selection at the same probe depth.
+\end{abstract}
+\endgroup
+
+
+\input{sections/week1.tex}
+\input{sections/week2.tex}
+
+\bibliographystyle{plain}
+\bibliography{references}
+
+\end{document}

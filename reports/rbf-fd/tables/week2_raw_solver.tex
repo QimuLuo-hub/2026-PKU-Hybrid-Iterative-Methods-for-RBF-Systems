@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{Rank-12 corrections with the same fixed classical prefix. The last two columns give system-63 results and convergence over its three RHSs.}
+\label{tab:raw-solver}
+\small
+\begin{tabular}{lrrrr}
+\toprule
+Method & Converged RHSs & Median iterations & ID 63 iterations & ID 63 $\eta_*$\\
+\midrule
+Fixed classical $q=48$ & 18/21 & 33 & 300 [0/3] & 0.000\\
+Exact complementary oracle & 21/21 & 26 & 95 [3/3] & 0.785\\
+Harmonic local correction & 21/21 & 27 & 298 [3/3] & 0.008\\
+Raw-space oracle & 21/21 & 25 & 92 [3/3] & 0.800\\
+Raw probe-only neural mixing & 21/21 & 31 & 235 [3/3] & 0.251\\
+$K$ plus raw-probe neural mixing & 20/21 & 32 & 299 [2/3] & 0.004\\
+\bottomrule
+\end{tabular}
+\end{table}
